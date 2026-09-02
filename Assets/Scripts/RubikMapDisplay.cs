@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -7,7 +8,7 @@ public class RubikMapDisplay : MonoBehaviour
     public GameObject rubik;
     public RubikLayerRotate layerRotate;
 
-    [Header("Keo 9 Panel cua tung mat vao day (0=top-left, 8=bot-right)")]
+    [Header("Keo 9 Panel cua tung mat vao day")]
     public GameObject[] faceUp    = new GameObject[9];
     public GameObject[] faceFront = new GameObject[9];
     public GameObject[] faceDown  = new GameObject[9];
@@ -15,14 +16,45 @@ public class RubikMapDisplay : MonoBehaviour
     public GameObject[] faceRight = new GameObject[9];
     public GameObject[] faceBack  = new GameObject[9];
 
-    float spacing = 1f; // khoang cach giua cubelet trong LOCAL SPACE cua rubik
+    float spacing = 1f;
 
     void Start()
     {
         ComputeSpacing();
+
+        // Tu dong sap xep 9 panel cua tung mat theo thu tu chuan:
+        // Hang tren (Trai, Giua, Phai) -> Hang giua (Trai, Giua, Phai) -> Hang duoi (Trai, Giua, Phai)
+        // Bat ke nguoi dung keo tha trong Inspector theo thu tu nao.
+        SortGrid(faceUp);
+        SortGrid(faceFront);
+        SortGrid(faceDown);
+        SortGrid(faceLeft);
+        SortGrid(faceRight);
+        SortGrid(faceBack);
     }
 
-    // Tinh khoang cach thuc te giua cac cubelet (de scan dung o)
+    void SortGrid(GameObject[] panels)
+    {
+        if (panels == null || panels.Length != 9) return;
+        for (int i = 0; i < 9; i++)
+        {
+            if (panels[i] == null) return;
+        }
+
+        // Sap xep theo Y giam dan (tren xuong duoi), roi theo X tang dan (trai sang phai)
+        var sorted = panels
+            .Select(p => new { obj = p, rt = p.GetComponent<RectTransform>() })
+            .OrderByDescending(p => Mathf.Round(p.rt != null ? p.rt.anchoredPosition.y : 0f))
+            .ThenBy(p => Mathf.Round(p.rt != null ? p.rt.anchoredPosition.x : 0f))
+            .Select(p => p.obj)
+            .ToArray();
+
+        for (int i = 0; i < 9; i++)
+        {
+            panels[i] = sorted[i];
+        }
+    }
+
     void ComputeSpacing()
     {
         var xs = new List<float>();
@@ -40,32 +72,15 @@ public class RubikMapDisplay : MonoBehaviour
             if (d > 0.01f) minDist = Mathf.Min(minDist, d);
         }
         if (minDist < float.MaxValue) spacing = minDist;
-        Debug.Log("[RubikMap] Cubelet spacing (local): " + spacing);
     }
 
     void LateUpdate()
     {
         if (layerRotate != null && layerRotate.rotating) return;
 
-        // Moi mat dung truc LOCAL cua Rubik:
-        //   localNormal = huong phap tuyen mat
-        //   localRight  = huong tang col (trai->phai tren panel)
-        //   localUp     = huong tang row (bot->top tren panel, row=1 la dong tren cung)
-        //
-        // Cross-map layout:
-        //       [U]
-        //  [L][F][R][B]
-        //       [D]
-        //
-        // U: phai = +X, tren-panel = -Z (Front o day panel)
-        // D: phai = +X, tren-panel = +Z (Back o day panel)
-        // F: phai = +X, tren-panel = +Y
-        // B: phai = -X (dao vi nhin tu sau), tren-panel = +Y
-        // L: phai = -Z (Back o phai), tren-panel = +Y
-        // R: phai = +Z (Front o phai), tren-panel = +Y
-
-        ScanFace(Vector3.up,       Vector3.right,   -Vector3.forward, faceUp);
-        ScanFace(Vector3.down,     Vector3.right,    Vector3.forward, faceDown);
+        // Quet 6 mat theo he toa do ban trai phang 2D (Net) chuan xac 100%
+        ScanFace(Vector3.up,       Vector3.right,    Vector3.forward, faceUp);
+        ScanFace(Vector3.down,     Vector3.right,   -Vector3.forward, faceDown);
         ScanFace(-Vector3.forward, Vector3.right,    Vector3.up,      faceFront);
         ScanFace(Vector3.forward, -Vector3.right,    Vector3.up,      faceBack);
         ScanFace(-Vector3.right,  -Vector3.forward,  Vector3.up,      faceLeft);
@@ -75,22 +90,24 @@ public class RubikMapDisplay : MonoBehaviour
     void ScanFace(Vector3 localNormal, Vector3 localRight, Vector3 localUp, GameObject[] cells)
     {
         float sp = spacing;
-        // Tinh huong world (TransformDirection khong tinh scale, dung cho huong)
         Vector3 worldNormal = rubik.transform.TransformDirection(localNormal);
-        int i = 0;
+
         for (int row = 1; row >= -1; row--)
         {
             for (int col = -1; col <= 1; col++)
             {
-                // Tinh diem xuat phat trong LOCAL SPACE roi chuyen sang world
-                // (TransformPoint tinh ca scale, nen dung cho vi tri)
+                // Index chuan theo Row-Major: 
+                // row=1 (Top): 0, 1, 2
+                // row=0 (Mid): 3, 4, 5
+                // row=-1(Bot): 6, 7, 8
+                int i = (1 - row) * 3 + (col + 1);
+
                 Vector3 localOrigin = localNormal * (sp * 2f)
                                     + localRight   * (col * sp)
                                     + localUp      * (row * sp);
                 Vector3 worldOrigin = rubik.transform.TransformPoint(localOrigin);
 
                 Ray ray = new Ray(worldOrigin, -worldNormal);
-                // Khoang raycast = 4x spacing, chuyen sang world qua lossyScale
                 float rayDist = sp * 4f * rubik.transform.lossyScale.x;
 
                 if (Physics.Raycast(ray, out RaycastHit hit, rayDist))
@@ -99,61 +116,48 @@ public class RubikMapDisplay : MonoBehaviour
                     var panel = cells[i]?.GetComponent<Image>();
                     if (panel != null) panel.color = c;
                 }
-                i++;
             }
         }
     }
 
-    // Doc mau cubelet: ho tro don material, da material (submesh), va child renderer
     Color ReadColor(RaycastHit hit, Vector3 worldNormal)
     {
+        // 1. Tim root cubelet (la con truc tiep cua GameObject rubik)
+        Transform cube = hit.collider.transform;
+        while (cube != null && cube.parent != null && cube.parent != rubik.transform)
+        {
+            cube = cube.parent;
+        }
+        if (cube == null || cube.parent == null) cube = hit.collider.transform;
+
+        // 2. Tim sticker mat nao dang huong ve worldNormal nhat
+        Renderer bestRenderer = null;
+        float maxDot = 0.5f;
+
+        foreach (Transform child in cube)
+        {
+            Renderer r = child.GetComponent<Renderer>();
+            if (r == null || r.sharedMaterial == null) continue;
+
+            Vector3 faceDir = (child.position - cube.position).normalized;
+            float dot = Vector3.Dot(faceDir, worldNormal);
+            if (dot > maxDot)
+            {
+                maxDot = dot;
+                bestRenderer = r;
+            }
+        }
+
+        if (bestRenderer != null && bestRenderer.sharedMaterial != null)
+        {
+            return bestRenderer.sharedMaterial.color;
+        }
+
+        // Fallback
         Renderer rend = hit.collider.GetComponent<Renderer>();
-
-        if (rend != null)
-        {
-            if (rend.sharedMaterials.Length == 1)
-                return rend.sharedMaterial != null ? rend.sharedMaterial.color : Color.grey;
-
-            // Da material: tim submesh bi hit
-            MeshFilter mf = hit.collider.GetComponent<MeshFilter>();
-            if (mf != null && mf.sharedMesh != null)
-            {
-                int sub = GetSubMesh(mf.sharedMesh, hit.triangleIndex);
-                sub = Mathf.Clamp(sub, 0, rend.sharedMaterials.Length - 1);
-                if (rend.sharedMaterials[sub] != null)
-                    return rend.sharedMaterials[sub].color;
-            }
-            return rend.sharedMaterial != null ? rend.sharedMaterial.color : Color.grey;
-        }
-
-        // Thu tim renderer trong child objects, chon cai mat huong gan nhat voi worldNormal
-        Renderer best = null;
-        float bestDot = 0.5f;
-        foreach (Renderer r in hit.collider.GetComponentsInChildren<Renderer>())
-        {
-            foreach (Vector3 axis in new[] {
-                r.transform.forward, -r.transform.forward,
-                r.transform.up,      -r.transform.up,
-                r.transform.right,   -r.transform.right })
-            {
-                float d = Vector3.Dot(axis, worldNormal);
-                if (d > bestDot) { bestDot = d; best = r; }
-            }
-        }
-        if (best != null && best.sharedMaterial != null) return best.sharedMaterial.color;
+        if (rend != null && rend.sharedMaterial != null)
+            return rend.sharedMaterial.color;
 
         return Color.grey;
-    }
-
-    static int GetSubMesh(Mesh mesh, int triangleIndex)
-    {
-        for (int s = 0; s < mesh.subMeshCount; s++)
-        {
-            var sub = mesh.GetSubMesh(s);
-            int start = sub.indexStart / 3;
-            int count = sub.indexCount  / 3;
-            if (triangleIndex >= start && triangleIndex < start + count) return s;
-        }
-        return 0;
     }
 }

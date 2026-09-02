@@ -41,45 +41,56 @@ public class RubikLayerRotate : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.L)) StartCoroutine(Rotate(Vector3.right,   -1f, -90f * dir));
         if (Input.GetKeyDown(KeyCode.F)) StartCoroutine(Rotate(Vector3.forward, -1f,  90f * dir));
         if (Input.GetKeyDown(KeyCode.B)) StartCoroutine(Rotate(Vector3.forward,  1f, -90f * dir));
-        if (Input.GetKeyDown(KeyCode.M)) StartCoroutine(Rotate(Vector3.right,   0f, -90f * dir));
-        if (Input.GetKeyDown(KeyCode.E)) StartCoroutine(Rotate(Vector3.up,      0f, -90f * dir));
-        if (Input.GetKeyDown(KeyCode.S)) StartCoroutine(Rotate(Vector3.forward, 0f,  90f * dir));
     }
 
     void HandleMouse()
     {
-        if (Input.GetMouseButtonDown(0) && !rotating)
+        if (Input.GetMouseButtonDown(0))
         {
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            if (Physics.Raycast(ray, out RaycastHit hit) && hit.transform.IsChildOf(rubik.transform))
+            if (Physics.Raycast(ray, out RaycastHit hit))
             {
-                hitCube        = hit.transform;
+                // Tim cubelet con truc tiep cua rubik
+                Transform cube = hit.collider.transform;
+                while (cube != null && cube.parent != null && cube.parent != rubik.transform)
+                {
+                    cube = cube.parent;
+                }
+                if (cube == null || cube.parent != rubik.transform) cube = hit.collider.transform;
+
+                hitCube = cube;
                 localHitNormal = SnapToAxis(rubik.transform.InverseTransformDirection(hit.normal));
-                mouseStart     = Input.mousePosition;
-                dragStarted    = false;
-                liveDragAngle  = 0f;
-                liveDragCubes  = null;
+                mouseStart = Input.mousePosition;
+                dragStarted = false;
             }
         }
 
-        if (hitCube != null && Input.GetMouseButton(0) && !rotating)
+        if (Input.GetMouseButton(0) && hitCube != null)
         {
             Vector2 drag = (Vector2)Input.mousePosition - mouseStart;
-            if (!dragStarted && drag.magnitude > 10f)
+
+            if (!dragStarted && drag.magnitude > 15f)
             {
-                SetupLiveDrag(drag);
                 dragStarted = true;
+                SetupLiveDrag(drag);
             }
-            if (dragStarted) ApplyLiveDrag(drag);
+
+            if (dragStarted && liveDragCubes != null)
+            {
+                ApplyLiveDrag(drag);
+            }
         }
 
         if (Input.GetMouseButtonUp(0) && hitCube != null)
         {
             if (dragStarted && liveDragCubes != null)
+            {
                 StartCoroutine(SnapDrag());
+            }
             else
+            {
                 hitCube = null;
-            dragStarted = false;
+            }
         }
     }
 
@@ -89,55 +100,46 @@ public class RubikLayerRotate : MonoBehaviour
         GetAxes(localHitNormal, out A1, out A2);
 
         Camera cam = Camera.main;
-        Vector3 center = rubik.transform.position;
-        Vector2 scrCenter = cam.WorldToScreenPoint(center);
+        Vector3 worldCenter = rubik.transform.position;
+        Vector3 worldCubePos = hitCube.position;
+        Vector2 scrCubePos = cam.WorldToScreenPoint(worldCubePos);
 
-        Vector2 sA1 = ((Vector2)cam.WorldToScreenPoint(center + rubik.transform.TransformDirection(A1)) - scrCenter).normalized;
-        Vector2 sA2 = ((Vector2)cam.WorldToScreenPoint(center + rubik.transform.TransformDirection(A2)) - scrCenter).normalized;
+        Vector3 worldA1 = rubik.transform.TransformDirection(A1);
+        Vector3 worldA2 = rubik.transform.TransformDirection(A2);
+
+        Vector2 sA1 = ((Vector2)cam.WorldToScreenPoint(worldCubePos + worldA1 * 0.5f) - scrCubePos).normalized;
+        Vector2 sA2 = ((Vector2)cam.WorldToScreenPoint(worldCubePos + worldA2 * 0.5f) - scrCubePos).normalized;
 
         float dotA1 = Vector2.Dot(drag.normalized, sA1);
         float dotA2 = Vector2.Dot(drag.normalized, sA2);
         Vector3 localCubePos = rubik.transform.InverseTransformPoint(hitCube.position);
 
-        // --- Chon truc xoay ---
-        bool isTopBottom = Mathf.Abs(localHitNormal.y) > 0.9f;
-        if (isTopBottom)
+        // --- Chon truc xoay (Chuan hoa tong quat cho tat ca 6 mat bao gom U va D) ---
+        // Vuot theo truc tren mat nao thi se xoay lop quanh truc vuong goc con lai
+        if (Mathf.Abs(dotA1) >= Mathf.Abs(dotA2))
         {
-            // Mat top/bottom: luon xoay quanh truc Y (normal cua mat)
-            liveDragAxis  = localHitNormal;
-            liveDragLayer = Mathf.Round(Vector3.Dot(localCubePos, localHitNormal));
-        }
-        else if (Mathf.Abs(dotA1) >= Mathf.Abs(dotA2))
-        {
-            // Keo NGANG tren mat ben: xoay lop ngang (truc Y)
-            liveDragAxis  = Vector3.up;
-            liveDragLayer = Mathf.Round(localCubePos.y);
+            liveDragAxis  = A2;
+            liveDragLayer = Mathf.Round(Vector3.Dot(localCubePos, A2));
         }
         else
         {
-            // Keo DOC tren mat ben: xoay cot (A1 = truc ngang trong mat)
             liveDragAxis  = A1;
             liveDragLayer = Mathf.Round(Vector3.Dot(localCubePos, A1));
         }
 
-        // --- Tinh huong tangent (left-hand Unity convention) ---
-        // Voi rotation duong quanh worldAxis, diem P di theo: Cross(P-center, worldAxis)
-        // (Dao nguoc Cross so voi right-hand, vi Unity la left-hand)
+        // --- Tinh vector tangent tren man hinh ---
         Vector3 worldRotAxis = rubik.transform.TransformDirection(liveDragAxis);
-        Vector3 hitVec       = hitCube.position - center;
+        Vector3 hitVec       = worldCubePos - worldCenter;
         Vector3 tangent      = Vector3.Cross(worldRotAxis, hitVec);
 
-        Vector2 screenTangent = ((Vector2)cam.WorldToScreenPoint(center + tangent) - scrCenter).normalized;
-
-        // Neu tangent gan zero (hit dung tren truc xoay), chon vec tuy chon
-        if (screenTangent.sqrMagnitude < 0.001f)
+        // Neu hit trung truc xoay (tam vien nam tren truc), dung phap tuyen mat de tinh huong
+        if (tangent.sqrMagnitude < 0.001f)
         {
-            Vector3 perp = (Mathf.Abs(worldRotAxis.x) < 0.9f)
-                ? Vector3.Cross(Vector3.right, worldRotAxis).normalized
-                : Vector3.Cross(Vector3.up, worldRotAxis).normalized;
-            tangent = Vector3.Cross(worldRotAxis, perp);
-            screenTangent = ((Vector2)cam.WorldToScreenPoint(center + tangent) - scrCenter).normalized;
+            Vector3 worldNormal = rubik.transform.TransformDirection(localHitNormal);
+            tangent = Vector3.Cross(worldRotAxis, worldNormal);
         }
+
+        Vector2 screenTangent = ((Vector2)cam.WorldToScreenPoint(worldCubePos + tangent * 0.5f) - scrCubePos).normalized;
 
         liveDragScreenDir = screenTangent;
         liveDragCubes = GetLayer(liveDragAxis, liveDragLayer);
@@ -178,14 +180,7 @@ public class RubikLayerRotate : MonoBehaviour
 
         foreach (var t in liveDragCubes)
         {
-            Vector3 lp = rubik.transform.InverseTransformPoint(t.position);
-            t.position = rubik.transform.TransformPoint(
-                new Vector3(Mathf.Round(lp.x), Mathf.Round(lp.y), Mathf.Round(lp.z)));
-            Vector3 le = t.localEulerAngles;
-            t.localEulerAngles = new Vector3(
-                Mathf.Round(le.x / 90f) * 90f,
-                Mathf.Round(le.y / 90f) * 90f,
-                Mathf.Round(le.z / 90f) * 90f);
+            SnapCubelet(t);
         }
 
         if (Mathf.Abs(snapped) > 1f && recordMoves)
@@ -218,18 +213,37 @@ public class RubikLayerRotate : MonoBehaviour
 
         foreach (var t in layer)
         {
-            Vector3 lp = rubik.transform.InverseTransformPoint(t.position);
-            t.position = rubik.transform.TransformPoint(
-                new Vector3(Mathf.Round(lp.x), Mathf.Round(lp.y), Mathf.Round(lp.z)));
-            Vector3 le = t.localEulerAngles;
-            t.localEulerAngles = new Vector3(
-                Mathf.Round(le.x / 90f) * 90f,
-                Mathf.Round(le.y / 90f) * 90f,
-                Mathf.Round(le.z / 90f) * 90f);
+            SnapCubelet(t);
         }
 
         if (recordMoves) OnMoveComplete?.Invoke(localAxis, layerValue, totalAngle);
         rotating = false;
+    }
+
+    void SnapCubelet(Transform t)
+    {
+        Vector3 lp = rubik.transform.InverseTransformPoint(t.position);
+        t.position = rubik.transform.TransformPoint(
+            new Vector3(Mathf.Round(lp.x), Mathf.Round(lp.y), Mathf.Round(lp.z)));
+
+        Vector3 lf = rubik.transform.InverseTransformDirection(t.forward).normalized;
+        Vector3 lu = rubik.transform.InverseTransformDirection(t.up).normalized;
+
+        lf = SnapToAxis(lf);
+        lu = SnapToAxis(lu);
+
+        Vector3 lr = Vector3.Cross(lu, lf);
+        if (lr.sqrMagnitude < 0.1f)
+        {
+            lu = Mathf.Abs(lf.y) < 0.9f ? Vector3.up : Vector3.forward;
+            lr = Vector3.Cross(lu, lf).normalized;
+        }
+        lu = Vector3.Cross(lf, lr).normalized;
+
+        t.rotation = Quaternion.LookRotation(
+            rubik.transform.TransformDirection(lf),
+            rubik.transform.TransformDirection(lu)
+        );
     }
 
     List<Transform> GetLayer(Vector3 localAxis, float value)
@@ -267,4 +281,3 @@ public class RubikLayerRotate : MonoBehaviour
         return new Vector3(0, 0, Mathf.Sign(v.z));
     }
 }
-
