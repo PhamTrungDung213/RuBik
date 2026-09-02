@@ -9,7 +9,8 @@ public class RubikFunction : MonoBehaviour
     public RubikLayerRotate layerRotate;
     public Button solveButton;
     public Button shuffleButton;
-    public float solveSpeed = 500f;
+    public float solveSpeed;
+    public float shuffleSpeed;
 
     // Luu vi tri ban dau cua tung cubelet
     struct CubeletState { public Transform t; public Vector3 pos; public Quaternion rot; }
@@ -57,6 +58,10 @@ public class RubikFunction : MonoBehaviour
         float[] angles = { 90f, -90f };
 
         Vector3 lastAxis = Vector3.zero;
+
+        float savedSpeed = layerRotate.speed;
+        layerRotate.speed = shuffleSpeed;
+
         for (int i = 0; i < 20; i++)
         {
             Vector3 axis;
@@ -69,6 +74,8 @@ public class RubikFunction : MonoBehaviour
 
             yield return StartCoroutine(layerRotate.RotateLayer(axis, layer, angle));
         }
+
+        layerRotate.speed = savedSpeed;
     }
 
     IEnumerator SolveRoutine()

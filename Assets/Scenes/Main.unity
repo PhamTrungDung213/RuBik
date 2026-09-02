@@ -4873,7 +4873,8 @@ MonoBehaviour:
   layerRotate: {fileID: 1998708257}
   solveButton: {fileID: 1460900974}
   shuffleButton: {fileID: 1257639048}
-  solveSpeed: 2000
+  solveSpeed: 1200
+  shuffleSpeed: 2000
 --- !u!1 &1416595636
 GameObject:
   m_ObjectHideFlags: 0
