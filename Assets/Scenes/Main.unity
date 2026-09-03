@@ -4329,6 +4329,7 @@ GameObject:
   - component: {fileID: 1283625862}
   - component: {fileID: 1283625861}
   - component: {fileID: 1283625860}
+  - component: {fileID: 1283625864}
   m_Layer: 5
   m_Name: UI
   m_TagString: Untagged
@@ -4414,6 +4415,7 @@ RectTransform:
   m_Children:
   - {fileID: 959668928}
   - {fileID: 1411824611}
+  - {fileID: 2100640613}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -4421,6 +4423,26 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!114 &1283625864
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1283625859}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 532339824aff040489e7e7f01c96dd77, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RubikController
+  rubik: {fileID: 1998708254}
+  layerRotate: {fileID: 1998708257}
+  solveButton: {fileID: 1460900974}
+  shuffleButton: {fileID: 1257639048}
+  solveSpeed: 1200
+  shuffleSpeed: 2000
+  solutionTextTMP: {fileID: 0}
+  solutionTextLegacy: {fileID: 2100640614}
 --- !u!1 &1361396647
 GameObject:
   m_ObjectHideFlags: 0
@@ -4828,7 +4850,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1411824611}
-  - component: {fileID: 1411824612}
   m_Layer: 5
   m_Name: Function
   m_TagString: Untagged
@@ -4857,24 +4878,6 @@ RectTransform:
   m_AnchoredPosition: {x: -570, y: -333}
   m_SizeDelta: {x: -1319.363, y: -777.912}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &1411824612
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1411824610}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 532339824aff040489e7e7f01c96dd77, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RubikController
-  rubik: {fileID: 1998708254}
-  layerRotate: {fileID: 1998708257}
-  solveButton: {fileID: 1460900974}
-  shuffleButton: {fileID: 1257639048}
-  solveSpeed: 1200
-  shuffleSpeed: 2000
 --- !u!1 &1416595636
 GameObject:
   m_ObjectHideFlags: 0
@@ -7190,6 +7193,85 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2094033865484944463, guid: 776e5c1994748bc43a3c6e4e6f92518b, type: 3}
   m_PrefabInstance: {fileID: 2078158263}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &2100640612
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2100640613}
+  - component: {fileID: 2100640615}
+  - component: {fileID: 2100640614}
+  m_Layer: 5
+  m_Name: Text (Legacy)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &2100640613
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2100640612}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1283625863}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 427.8002, y: -459.106}
+  m_SizeDelta: {x: 828.398, y: 161.231}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &2100640614
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2100640612}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Text
+  m_Material: {fileID: 0}
+  m_Color: {r: 0.9525614, g: 1, b: 0, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_FontData:
+    m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
+    m_FontSize: 40
+    m_FontStyle: 0
+    m_BestFit: 0
+    m_MinSize: 3
+    m_MaxSize: 300
+    m_Alignment: 0
+    m_AlignByGeometry: 0
+    m_RichText: 1
+    m_HorizontalOverflow: 0
+    m_VerticalOverflow: 0
+    m_LineSpacing: 1
+  m_Text: 
+--- !u!222 &2100640615
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2100640612}
+  m_CullTransparentMesh: 1
 --- !u!1 &2123046753
 GameObject:
   m_ObjectHideFlags: 0
