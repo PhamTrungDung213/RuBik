@@ -27,7 +27,7 @@ Sử dụng **Chuột trái** để thao tác trực tiếp lên các mặt:
 
 ### ⌨️ Điều khiển bằng bàn phím
 Hỗ trợ phím tắt theo ký hiệu Rubik quốc tế. 
-> 💡 **Mẹo:** Giữ phím `Shift` + Phím tương ứng để xoay **ngược chiều kim đồng hồ**.
+> 💡 Giữ phím `Shift` + Phím tương ứng để xoay **ngược chiều kim đồng hồ**.
 
 | Phím | Mặt thao tác | Phím | Lớp giữa (Middle Layers) |
 | :---: | :--- | :---: | :--- |
@@ -37,14 +37,3 @@ Hỗ trợ phím tắt theo ký hiệu Rubik quốc tế.
 | **B** | Mặt sau (Back) | | |
 | **R** | Mặt phải (Right) | | |
 | **L** | Mặt trái (Left) | | |
-
----
-
-## 📁 Cấu trúc Mã nguồn (Scripts)
-
-| Tên File | Chức năng đảm nhiệm |
-| :--- | :--- |
-| 📄 `RubikRotate.cs` | Quản lý input chuột phải, tính toán xoay toàn bộ khối Rubik trong không gian. |
-| 📄 `RubikLayerRotate.cs` | Xử lý logic xoay từng layer (mặt Rubik) độc lập bằng cả input chuột trái và bàn phím. |
-| 📄 `RubikFunction.cs` | Xử lý sự kiện UI: Nút Trộn ngẫu nhiên và logic ghi nhớ/thực thi thuật toán Giải tự động. |
-| 📄 `RubikMapDisplay.cs` | Quét dữ liệu màu sắc thực tế và hiển thị bản đồ màu 2D (trải phẳng) của khối Rubik. |
