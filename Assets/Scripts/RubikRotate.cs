@@ -21,13 +21,13 @@ public class RotateRubik : MonoBehaviour
     }
     void Swipe()
     {
-        if (Input.GetMouseButtonDown(1))
+        if (Input.GetMouseButtonDown(0))
         {
             //Lay vi tri dau tien cua tro chuot khi nhan (2d)
             firstPressPos = new Vector2(Input.mousePosition.x, Input.mousePosition.y);
             
         }
-        if (Input.GetMouseButtonUp(1))
+        if (Input.GetMouseButtonUp(0))
         {
             //Lay vi tri cuoi cung cua tro chuot khi tha (2d)
             secondPressPos = new Vector2(Input.mousePosition.x, Input.mousePosition.y);

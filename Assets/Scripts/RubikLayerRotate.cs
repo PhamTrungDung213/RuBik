@@ -45,7 +45,7 @@ public class RubikLayerRotate : MonoBehaviour
 
     void HandleMouse()
     {
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetMouseButtonDown(1))
         {
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             if (Physics.Raycast(ray, out RaycastHit hit))
@@ -65,7 +65,7 @@ public class RubikLayerRotate : MonoBehaviour
             }
         }
 
-        if (Input.GetMouseButton(0) && hitCube != null)
+        if (Input.GetMouseButton(1) && hitCube != null)
         {
             Vector2 drag = (Vector2)Input.mousePosition - mouseStart;
 
@@ -81,7 +81,7 @@ public class RubikLayerRotate : MonoBehaviour
             }
         }
 
-        if (Input.GetMouseButtonUp(0) && hitCube != null)
+        if (Input.GetMouseButtonUp(1) && hitCube != null)
         {
             if (dragStarted && liveDragCubes != null)
             {

@@ -19,6 +19,9 @@ public class RubikFunction : MonoBehaviour
     public TMP_Text solutionTextTMP;
     public Text solutionTextLegacy;
 
+    [Header("Button Map (Tuy chon, de trong se tu dong tim)")]
+    public GameObject buttonMap;
+
     struct CubeletState { public Transform t; public Vector3 pos; public Quaternion rot; }
     List<CubeletState> initialStates = new List<CubeletState>();
 
@@ -37,7 +40,9 @@ public class RubikFunction : MonoBehaviour
         shuffleButton.onClick.AddListener(OnShuffle);
 
         AutoFindSolutionText();
-        SetSolutionText("Bấm TRỘN RUBIK hoặc GIẢI TỰ ĐỘNG!");
+        AutoBindButtonMap();
+
+        SetSolutionText("Sẵn sàng. Bấm TRỘN RUBIK hoặc GIẢI TỰ ĐỘNG!");
 
         // Khoi tao truoc bang Kociemba trong luong ngam (background task)
         Task.Run(() =>
@@ -53,6 +58,84 @@ public class RubikFunction : MonoBehaviour
         });
     }
 
+    /// <summary>
+    /// Ham xoay mot nuoc co ban danh cho Button UI goi toi (vi du "U", "U'", "M", "E", "S"...)
+    /// </summary>
+    public void RotateMove(string move)
+    {
+        if (layerRotate.rotating) return;
+        StartCoroutine(ExecuteMove(move));
+    }
+
+    void AutoBindButtonMap()
+    {
+        GameObject bm = buttonMap != null ? buttonMap : GameObject.Find("ButtonMap");
+        if (bm == null)
+        {
+            // Tim trong tat ca GameObject ke ca khi bi an
+            var allGo = Resources.FindObjectsOfTypeAll<GameObject>();
+            foreach (var go in allGo)
+            {
+                if (go.name == "ButtonMap" && go.scene.isLoaded)
+                {
+                    bm = go;
+                    break;
+                }
+            }
+        }
+
+        if (bm == null) return;
+
+        Button[] buttons = bm.GetComponentsInChildren<Button>(true);
+        foreach (var btn in buttons)
+        {
+            string moveCode = "";
+
+            // 1. Doc chu tren button
+            var tmp = btn.GetComponentInChildren<TMP_Text>(true);
+            if (tmp != null && !string.IsNullOrWhiteSpace(tmp.text))
+            {
+                moveCode = tmp.text.Trim();
+            }
+            else
+            {
+                var legacy = btn.GetComponentInChildren<Text>(true);
+                if (legacy != null && !string.IsNullOrWhiteSpace(legacy.text))
+                {
+                    moveCode = legacy.text.Trim();
+                }
+            }
+
+            // 2. Neu khong co text hoac chua hop le, xac dinh qua ten gameObject va parent
+            if (string.IsNullOrEmpty(moveCode) || !IsValidMove(moveCode))
+            {
+                string pName = btn.transform.parent != null ? btn.transform.parent.name : "";
+                string bName = btn.gameObject.name.ToUpper();
+                if (pName == "1") moveCode = bName + "'";
+                else moveCode = bName;
+            }
+
+            if (IsValidMove(moveCode))
+            {
+                string targetMove = moveCode;
+                btn.onClick.RemoveAllListeners();
+                btn.onClick.AddListener(() => RotateMove(targetMove));
+                Debug.Log($"Auto-bound button '{btn.gameObject.name}' -> {targetMove}");
+            }
+        }
+    }
+
+    bool IsValidMove(string m)
+    {
+        if (string.IsNullOrEmpty(m)) return false;
+        char f = char.ToUpper(m[0]);
+        if (f != 'U' && f != 'D' && f != 'L' && f != 'R' && f != 'F' && f != 'B' && f != 'M' && f != 'E' && f != 'S')
+            return false;
+        if (m.Length > 1 && m[1] != '\'' && m[1] != '2')
+            return false;
+        return true;
+    }
+
     void SetSolutionText(string msg)
     {
         if (solutionTextTMP != null) solutionTextTMP.text = msg;
@@ -63,7 +146,6 @@ public class RubikFunction : MonoBehaviour
     {
         if (solutionTextTMP != null || solutionTextLegacy != null) return;
 
-        // Tu dong tim kiem text phu hop trong Canvas neu chua keo tha thu cong
         var allTmp = FindObjectsByType<TMP_Text>(FindObjectsInactive.Include);
         foreach (var t in allTmp)
         {
@@ -207,7 +289,7 @@ public class RubikFunction : MonoBehaviour
     {
         if (string.IsNullOrEmpty(move)) yield break;
 
-        char face = move[0];
+        char face = char.ToUpper(move[0]);
         int modifier = 1; // 1: 90 deg, 2: 180 deg, -1: -90 deg (prime)
         if (move.Length > 1)
         {
@@ -250,6 +332,21 @@ public class RubikFunction : MonoBehaviour
                 axis = Vector3.forward;
                 layer = 1f;
                 baseAngle = 90f;
+                break;
+            case 'M':
+                axis = Vector3.right;
+                layer = 0f;
+                baseAngle = -90f; // theo chieu L
+                break;
+            case 'E':
+                axis = Vector3.up;
+                layer = 0f;
+                baseAngle = -90f; // theo chieu D
+                break;
+            case 'S':
+                axis = Vector3.forward;
+                layer = 0f;
+                baseAngle = -90f; // theo chieu F
                 break;
         }
 
